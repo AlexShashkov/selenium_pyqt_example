@@ -48,23 +48,12 @@ class Main(QMainWindow):
         self.parameters = QGroupBox("Параметры парсера")
         layout = QVBoxLayout()
 
-        #radiobutton = QRadioButton("Сохранить в csv формате")
-        #radiobutton.setChecked(True)
-        #radiobutton.type = "csv"
-        #radiobutton.toggled.connect(self.radioHandler)
-        #layout.addWidget(radiobutton)
-        
-        #radiobutton = QRadioButton("Сохранить в txt формате")
-        #radiobutton.type = "txt"
-        #radiobutton.toggled.connect(self.radioHandler)
-        #layout.addWidget(radiobutton)
-
         checkBox = QCheckBox("Скрытый режим")
         checkBox.toggle()
         checkBox.stateChanged.connect(self.checkBoxHandler)
         layout.addWidget(checkBox)
 
-        label = QLabel('Макс. количество попыток time-out:')
+        label = QLabel('Макс. количество попыток\nпри time-out:')
         layout.addWidget(label)
         self.maxTimeoutTries = QLineEdit('2', self)
         layout.addWidget(self.maxTimeoutTries)
@@ -85,6 +74,7 @@ class Main(QMainWindow):
         
         layout.addStretch()
         self.parameters.setLayout(layout)
+        self.parameters.setMaximumWidth(200)
 
         #################################
 
@@ -113,6 +103,7 @@ class Main(QMainWindow):
         layout.addWidget(button)
 
         self.table.setLayout(layout)
+        self.table.setMaximumWidth(600)
 
     def radioHandler(self):
         radioButton = self.sender()
