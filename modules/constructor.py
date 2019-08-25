@@ -9,9 +9,6 @@ class Pin(QWidget):
         QWidget.__init__(self, parent)
         self.holder = QHBoxLayout(self)
         self.setAcceptDrops(True)
-        # Номер
-        # Параметры
-        # Тип
         self.number = number
         self.params = []
         self.type = type
@@ -77,12 +74,6 @@ class Pin(QWidget):
 
         self.params = [self.num, self.input]
 
-    #def mousePressEvent(self, e):
-    #    QWidget.mousePressEvent(self, e)
-
-    #    if e.button() == Qt.RightButton:
-    #        print('Pin menu call')
-
     def contextMenuEvent(self, event):
         contextMenu = QMenu(self)
         deleteAction = contextMenu.addAction("Удалить")
@@ -117,7 +108,6 @@ class Constructor(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setWidget(self.main)
 
-        # Buttons from drag n drop
         button = QPushButton('Условие', self)
         button.type = 'cond'
         button.clicked.connect(partial(self.on_click, button.type))
@@ -153,16 +143,10 @@ class Constructor(QWidget):
     @pyqtSlot(str)
     def on_click(self, param=None):
         def createCondition():
-            print('CREATING CONDITION')
-            #self.mainLayout.addWidget(Pin('My name is jeff', self))
             self.mainLayout.addWidget(Pin('cond', len(self.main.findChildren(Pin)) + 1, self))
         def createLoop():
-            print('CREATING LOOP')
-            #self.mainLayout.addWidget(Pin('My name is jeff', self))
             self.mainLayout.addWidget(Pin('loop', len(self.main.findChildren(Pin)) + 1, self))
         def createExecute():
-            print('CREATING EXEC')
-            #self.mainLayout.addWidget(Pin('My name is jeff', self))
             self.mainLayout.addWidget(Pin('run', len(self.main.findChildren(Pin)) + 1, self))
         def clear():
             res = []

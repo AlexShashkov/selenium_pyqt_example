@@ -12,9 +12,6 @@ class Table(QWidget):
         self.table = QTableWidget(self)
         self.grid.addWidget(self.table)
 
-        #self.setHeader(['test', 'test'])
-        #self.addRow()
-
     def editCell(self, value, row, column):
         print('Editing cell {}{}'.format(row, column))
         item = QTableWidgetItem(str(value)) 

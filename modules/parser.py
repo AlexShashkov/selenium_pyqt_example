@@ -72,38 +72,27 @@ class Methods():
         return 
 
     def getByXpath(self, input):
-        # Todo: максимальное кол-во попыток при таймауте
-        def get(tries):
-            inp = None
-            try:
-                inp = WebDriverWait(self.browser, 1).until(EC.presence_of_element_located((By.XPATH, input)))
-            except TimeoutException:
-                if tries < self.max_tries:
-                    print(f'TIMEOUT: ПОПЫТКА {tries} ИЗ {self.max_tries}')
-                    inp = get(tries + 1)
-                else:
-                    print(f'ЭЛЕМЕНТ {input} НЕ НАЙДЕН')
-                    inp = None
-            return inp
-        #self.object = self.browser.find_element_by_xpath(input)
-        self.object = get(0)
+        self.object = self.getObject(input, By.XPATH, 0)
 
     def getByClassName(self, input):
-        # Получить один элемент
-        def get(tries):
-            inp = None
-            try:
-                inp = WebDriverWait(self.browser, 1).until(EC.presence_of_element_located((By.CLASS_NAME, input)))
-            except TimeoutException:
-                if tries < self.max_tries:
-                    print(f'TIMEOUT: ПОПЫТКА {tries} ИЗ {self.max_tries}')
-                    inp = get(tries + 1)
-                else:
-                    print(f'ЭЛЕМЕНТ {input} НЕ НАЙДЕН')
-                    inp = None
-            return inp
-        #self.object = self.browser.find_element_by_class_name(input)
-        self.object = get(0)
+        self.object = self.getObject(input, By.CLASS_NAME, 0)
+
+    def getById(self, input):
+        self.object = self.getObject(input, By.ID, 0)
+
+    def getObject(self, input, type, tries):
+        inp = None
+        try:
+            inp = WebDriverWait(self.browser, 1).until(EC.presence_of_element_located((type, input)))
+        except TimeoutException:
+            if tries < self.max_tries:
+                print(f'TIMEOUT: ПОПЫТКА {tries} ИЗ {self.max_tries}')
+                inp = self.getObject(input, type, tries + 1)
+            else:
+                print(f'ЭЛЕМЕНТ {input} НЕ НАЙДЕН')
+                inp = None
+        return inp
+
 
     def getMultipleByClassName(self, input):
         def get(tries):
@@ -140,7 +129,7 @@ class Methods():
             value = self.getText()
         if val2 is None:
             val1 = int(val1)
-            self.table.editCell(value, self.table.rowCount - 1, val1)
+            self.table.editCell(value, self.table.table.rowCount() - 1, val1)
         else:
             val1 = int(val1)
             val2 = int(val2)
@@ -154,10 +143,10 @@ class Runner(Methods):
 
         self.commands = {
             'goto':self.goto, 'test':self.test, 'stop':self.stop, 'get':self.get, 'back':self.back, 'iterGet':self.iterationalGet,
-            'getX':self.getByXpath, 'getXText':self.getXpathText, 'getLen':self.objectLen, 'getClass':self.getByClassName,
+            'getX':self.getByXpath, 'getClass':self.getByClassName, 'getId':self.getById,
             'getClassMulti':self.getMultipleByClassName,
-            'getClassText':self.getClassText, 'click':self.click,
-            'addRow':self.addRow, 'delRow':self.test, 'writeCell':self.editCell, 'clearRow':self.test
+            'getXText':self.getXpathText, 'getClassText':self.getClassText, 'click':self.click,
+            'getLen':self.objectLen, 'addRow':self.addRow, 'delRow':self.test, 'writeCell':self.editCell, 'clearRow':self.test
             }
 
     def pre_execute(self, work):
@@ -176,7 +165,7 @@ class Runner(Methods):
 
     def execute(self, function):
         if function[len(function)-1] == 'run':
-            pre = function[1].split(' AND ')
+            pre = function[1].split('; ')
             if len(pre) > 1:
                 it = []
                 for new_item in pre:
