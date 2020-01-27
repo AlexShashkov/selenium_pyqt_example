@@ -1,31 +1,72 @@
-﻿from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QSizePolicy, QMenu
+﻿from PyQt5 import QtGui
+
+from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QScrollArea, QSizePolicy, QMenu
 from PyQt5.QtCore import Qt
 
 from PyQt5.QtCore import pyqtSlot
 from functools import partial
 
+
+class TextEdit(QPlainTextEdit):
+    '''
+    Modified QPlainTextEdit
+    '''
+    def __init__(self, input, parent):
+        QPlainTextEdit.__init__(self, parent)
+        #self.setLineWrapMode(True)
+        self.countOfRows = 1
+        self.setPlainText(input)
+        self.changeRows(1)
+
+    def text(self):
+        return self.toPlainText()
+
+    def keyPressEvent(self, e):
+        # Handles 'enter' key
+        if e.key() == 16777220:
+            self.countOfRows += 1
+            self.changeRows(self.countOfRows)
+            self.insertPlainText(e.text())
+        elif e.key() == Qt.Key_Backspace:
+            self.textCursor().deletePreviousChar()
+        else:
+            self.insertPlainText(e.text())
+
+    def changeRows(self, num_rows):
+        metrics = self.font()
+        rowHeight = QtGui.QFontMetrics(metrics).lineSpacing()
+        self.setFixedHeight(num_rows * rowHeight + 10)
+
+
 class Pin(QWidget):
+    '''
+    Basic block
+    '''
     def __init__(self, type, number, parent):
         QWidget.__init__(self, parent)
+
+        # Var that stores everything
         self.holder = QHBoxLayout(self)
+        # TODO - enable drops
         self.setAcceptDrops(True)
         self.number = number
         self.params = []
         self.type = type
 
+        # type that will be created
         types = {'cond':self.createCondition, 'loop':self.createLoop, 'run':self.createExecute}
         types[type]()
      
     def createCondition(self):
         self.num = QLabel(str(self.number), self)
         self.label = QLabel('\tЕсли', self)
-        self.input = QLineEdit('', self)
+        self.input = TextEdit('', self)
         self.labelEqual = QLabel('Равно', self)
-        self.inputEqual = QLineEdit('', self)
+        self.inputEqual = TextEdit('', self)
         self.labelThen = QLabel('То', self)
-        self.inputThen = QLineEdit('', self)
+        self.inputThen = TextEdit('', self)
         self.labelElse = QLabel('Иначе', self)
-        self.inputElse = QLineEdit('', self)
+        self.inputElse = TextEdit('', self)
 
         self.holder.addWidget(self.num)
         self.holder.addWidget(self.label)
@@ -42,13 +83,13 @@ class Pin(QWidget):
     def createLoop(self):
         self.num = QLabel(str(self.number), self)
         self.label = QLabel('\tОт', self)
-        self.input = QLineEdit('', self)
+        self.input = TextEdit('', self)
         self.labelTo = QLabel('До', self)
-        self.inputTo = QLineEdit('', self)
+        self.inputTo = TextEdit('', self)
         self.labelThen = QLabel('Выполнить', self)
-        self.inputThen = QLineEdit('', self)
+        self.inputThen = TextEdit('', self)
         self.labelElse = QLabel('Иначе', self)
-        self.inputElse = QLineEdit('', self)
+        self.inputElse = TextEdit('', self)
 
         self.holder.addWidget(self.num)
         self.holder.addWidget(self.label)
@@ -66,7 +107,7 @@ class Pin(QWidget):
     def createExecute(self):
         self.num = QLabel(str(self.number), self)
         self.label = QLabel('\tВыполнить', self)
-        self.input = QLineEdit('', self)
+        self.input = TextEdit('', self)
 
         self.holder.addWidget(self.num)
         self.holder.addWidget(self.label)
@@ -75,6 +116,7 @@ class Pin(QWidget):
         self.params = [self.num, self.input]
 
     def contextMenuEvent(self, event):
+        # TODO: REARRANGE NUMERATION AFTER DELETE
         contextMenu = QMenu(self)
         deleteAction = contextMenu.addAction("Удалить")
         #moveAction = contextMenu.addAction("Переместить")
@@ -86,6 +128,9 @@ class Pin(QWidget):
         #    self.parent().
 
 class Constructor(QWidget):
+    '''
+    Constructor window
+    '''
     def __init__(self, parent=None):
         super(Constructor, self).__init__(parent)
         self.setAcceptDrops(True)
@@ -131,13 +176,25 @@ class Constructor(QWidget):
         print('Constructor created')
 
     def getScenario(self):
+        '''
+        Parses users input
+        '''
+        # Scans all pins
         res_orig = self.main.findChildren(Pin)
         if len(res_orig) > 0:
+            # Gets every pin
             res = [item.params for item in res_orig]
-            res = [[item.text() for item in res[i]] for i in range(len(res))]
+            # Reads content of every pin
+            out = []
             for i in range(len(res)):
-                res[i].append(res_orig[i].type)
-            return res
+                pin = []
+                for item in res[i]:
+                    pin.append(item.text()[:-1].replace('\n', ' '))
+                out.append(pin)
+
+            for i in range(len(out)):
+                out[i].append(res_orig[i].type)
+            return out
 
     @pyqtSlot()
     @pyqtSlot(str)

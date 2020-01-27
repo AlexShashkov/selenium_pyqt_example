@@ -13,6 +13,9 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.remote.webelement import WebElement
 
 class Methods():
+    '''
+    Methods for parsing
+    '''
     def __init__(self, parent, headless, max_tries):
         #super(Methods, self).__init__(parent)
         self.opts = Options()
@@ -21,19 +24,40 @@ class Methods():
         self.opts.add_argument('log-level=3')
         self.browser = Chrome(options=self.opts)
 
-        self.max_tries = int(max_tries)
-
         self.parent = parent
         self.table = self.parent.inTable
 
+        # To store variables
+        self.variables = {}
+        # Count of tries before canceling
+        self.max_tries = int(max_tries)
+
     def back(self):
+        '''
+        Return to the previos page
+        '''
         self.get(self.last)
 
     def get(self, input):
+        '''
+        Load page
+        '''
+        input = self.checkIfVarExists(input)
         self.last = self.browser.current_url
         self.browser.get(input)
 
+    def goto(self, input):
+        '''
+        Goto to jump from cell to cell
+        '''
+        input = self.checkIfVarExists(input)
+        self.execute(self.work[int(input)-1])
+
     def iterationalGet(self, input, change):
+        '''
+        iterational load
+        '''
+        input = self.checkIfVarExists(input)
         if(self.currentLoopIteration is not None):
             input = input.replace(change, str(self.currentLoopIteration))
             self.get(input)
@@ -42,10 +66,14 @@ class Methods():
             self.stop()
 
     def click(self):
+        '''
+        Clicks at object or objects
+        '''
         if type(self.object) == WebElement:
             self.last = self.browser.current_url
             self.object.click()
         else:
+            # Checks that given cycle
             if self.currentLoopIteration is not None:
                 self.last = self.browser.current_url
                 self.object[self.currentLoopIteration].click()
@@ -54,7 +82,11 @@ class Methods():
                 self.stop()
 
     def objectLen(self, input=None):
+        '''
+        Get length of object
+        '''
         if input is not None:
+            input = self.checkIfVarExists(input)
             return len(input)
         if type(self.object) == WebElement:
             return 1
@@ -62,27 +94,48 @@ class Methods():
             return len(self.object)
 
     def getXpathText(self, input):
+        '''
+        Get text by xpath
+        '''
+        input = self.checkIfVarExists(input)
         self.getByXpath(input)
         val = self.getText()
         return val
 
     def getClassText(self, input):
+        '''
+        Get text by class name
+        '''
+        input = self.checkIfVarExists(input)
         self.getByClassName(input)
         val = self.getText()
         return 
 
     def getByXpath(self, input):
+        '''
+        Get object by xpath
+        '''
         self.object = self.getObject(input, By.XPATH, 0)
 
     def getByClassName(self, input):
+        '''
+        Get object by class name
+        '''
         self.object = self.getObject(input, By.CLASS_NAME, 0)
 
     def getById(self, input):
+        '''
+        Get object by class name
+        '''
         self.object = self.getObject(input, By.ID, 0)
 
     def getObject(self, input, type, tries):
+        '''
+        Get object
+        '''
         inp = None
         try:
+            
             inp = WebDriverWait(self.browser, 1).until(EC.presence_of_element_located((type, input)))
         except TimeoutException:
             if tries < self.max_tries:
@@ -108,6 +161,8 @@ class Methods():
                     print(f'ЭЛЕМЕНТ {input} НЕ НАЙДЕН')
                     inp = None
             return inp
+
+        input = self.checkIfVarExists(input)
         self.object = get(0)
 
     def getText(self):
@@ -135,18 +190,42 @@ class Methods():
             val2 = int(val2)
             self.table.editCell(value, val1, val2)
 
+    def savePicture(self, input, path):
+        input = self.checkIfVarExists(input)
+        path = self.checkIfVarExists(path)
+        pass
+
+    def createVar(self, name, value):
+        self.variables[name] = value
+
+    def deleteVar(self, name):
+        self.variables.pop(name)
+    
+    def checkIfVarExists(self, input):
+        if input in self.variables.keys():
+            return self.variables[input]
+
+        return input
+
 class Runner(Methods):
+    '''
+    Class that runs input of user
+    '''
     def __init__(self, parent, headless, max_tries):
         super(Runner, self).__init__(parent, headless, max_tries)
         self.running = False
         self.object = None
 
         self.commands = {
-            'goto':self.goto, 'test':self.test, 'stop':self.stop, 'get':self.get, 'back':self.back, 'iterGet':self.iterationalGet,
+            # List of all commands
+            'goto':self.goto, 'test':self.test, 'stop':self.stop,
+            'get':self.get, 'back':self.back, 'iterGet':self.iterationalGet,
             'getX':self.getByXpath, 'getClass':self.getByClassName, 'getId':self.getById,
             'getClassMulti':self.getMultipleByClassName,
             'getXText':self.getXpathText, 'getClassText':self.getClassText, 'click':self.click,
-            'getLen':self.objectLen, 'addRow':self.addRow, 'delRow':self.test, 'writeCell':self.editCell, 'clearRow':self.test
+            'getLen':self.objectLen, 'addRow':self.addRow, 'delRow':self.test,
+            'writeCell':self.editCell, 'clearRow':self.test, 'picture':self.savePicture,
+            'value':self.createVar, 'delVal':self.deleteVar
             }
 
     def pre_execute(self, work):
@@ -164,6 +243,9 @@ class Runner(Methods):
                     break
 
     def execute(self, function):
+        '''
+        Executes input of user
+        '''
         if function[len(function)-1] == 'run':
             pre = function[1].split('; ')
             if len(pre) > 1:
@@ -185,12 +267,18 @@ class Runner(Methods):
             self.runCondition(function)
 
     def run(self, function, parameters=None):
+        '''
+        Run command
+        '''
         if parameters is not None:
             return self.commands[function](*parameters)
         else:
             return self.commands[function]()
 
     def runLoop(self, function):
+        '''
+        Method that executes loop
+        '''
         print(function)
         frm = function[1]
         to = function[2]
@@ -216,6 +304,9 @@ class Runner(Methods):
         self.currentLoopIteration = None
 
     def runCondition(self, function):
+        '''
+        Method that executes condition
+        '''
         print(function)
         first = function[1]
         second = function[2]
@@ -236,11 +327,14 @@ class Runner(Methods):
                 self.execute([None, other, 'run'])
 
     def writeToCell(self, input):
+        '''
+        Changes cell? Possibly topology
+        '''
         pass
 
-    def goto(self, input):
-        self.execute(self.work[int(input)-1])
-
     def stop(self):
+        '''
+        Stops job
+        '''
         self.browser.quit()
         self.running = False
